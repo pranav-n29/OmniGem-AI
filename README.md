@@ -20,9 +20,15 @@ Built for the **Gemini Live Agent Challenge**.
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ System Architecture
 
 ```
+<h3 align="center">Architecture</h3>
+
+<p align="center">
+  <img src="assets/architecture.png" width="700">
+</p>
+
 Voice Command
       ↓
 Frontend (HTML + JavaScript)
