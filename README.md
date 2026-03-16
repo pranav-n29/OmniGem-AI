@@ -23,44 +23,41 @@ Built for the **Gemini Live Agent Challenge**.
 ## 🏗️ Architecture
 
 ```
-## 🏗 System Architecture
-
-```mermaid
-flowchart TD
-
-A[User Voice Command] --> B[Frontend UI<br>HTML + JavaScript]
-
-B --> C[Speech Recognition<br>Web Speech API]
-
-C --> D[Screen Capture<br>screenshot-desktop]
-
-D --> E[Node.js Backend<br>Express Server]
-
-E --> F[Google Gemini API<br>Vision Model]
-
-F --> G[AI Analysis Engine]
-
-G --> H[Structured JSON Response]
-
-H --> I[Frontend Renderer]
-
-I --> J[Results Displayed to User<br>• What AI Sees<br>• Risks<br>• Suggestions]
-
-
-
-Voice Command
-      ↓
-Frontend (HTML + JavaScript)
-      ↓
-Screen Capture
-      ↓
-Node.js Backend (Express)
-      ↓
+User (Voice Command)
+        │
+        ▼
+Frontend UI (HTML, CSS, JavaScript)
+        │
+        │  Web Speech API
+        ▼
+Command Processor
+        │
+        ▼
+Screen Capture Service
+(screenshot-desktop)
+        │
+        ▼
+Node.js Backend (Express API)
+        │
+        │  /analyze endpoint
+        ▼
 Google Gemini API
-      ↓
-AI Analysis
-      ↓
-Results Displayed in UI
+(Multimodal Vision Model)
+        │
+        ▼
+AI Analysis Engine
+        │
+        ▼
+Structured Response (JSON)
+        │
+        ▼
+Frontend Renderer
+        │
+        ▼
+Insights Displayed to User
+• What AI Sees
+• Possible Risks
+• Suggestions
 ```
 
 ---
