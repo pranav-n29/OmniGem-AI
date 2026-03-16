@@ -1,0 +1,93 @@
++----------------------+
+|        User          |
+|  Voice / Button UI   |
++----------+-----------+
+           |
+           v
++------------------------------+
+|        Frontend UI           |
+|  HTML + CSS + JavaScript     |
+|  - Voice Recognition         |
+|  - Command Detection         |
+|  - UI Interaction            |
++--------------+---------------+
+               |
+               v
++------------------------------+
+|      Screen Capture Layer    |
+|  screenshot-desktop (Node)   |
+|  Captures active screen      |
++--------------+---------------+
+               |
+               v
++------------------------------+
+|        Backend Server        |
+|       Node.js + Express      |
+|  API Endpoints:              |
+|  /capture                    |
+|  /analyze                    |
++--------------+---------------+
+               |
+               v
++------------------------------+
+|       Image Processing       |
+|  - Resize Screenshot         |
+|  - Convert to Base64         |
+|  - Prepare Gemini Request    |
++--------------+---------------+
+               |
+               v
++------------------------------+
+|        Google Gemini AI      |
+|  Gemini 2.5 Flash API        |
+|  Multimodal Analysis         |
+|  - Understand Screenshot     |
+|  - Generate Insights         |
++--------------+---------------+
+               |
+               v
++------------------------------+
+|        AI Response Parser    |
+|  Extract JSON Response       |
+|  - What AI Sees              |
+|  - Possible Risks            |
+|  - Suggestions               |
++--------------+---------------+
+               |
+               v
++------------------------------+
+|        Frontend Renderer     |
+|  Display AI Insights         |
+|  - Bullet Points             |
+|  - UI Cards                  |
+|  - Risk Indicators           |
++--------------+---------------+
+               |
+               v
++------------------------------+
+|        User Output           |
+|  Screen Explanation          |
+|  Code Suggestions            |
+|  UI Improvements             |
++------------------------------+
+
+
+
+
+End-to-End Workflow-
+
+Voice Command
+      ↓
+Frontend Detects Command
+      ↓
+Screen Screenshot Captured
+      ↓
+Image Sent to Backend API
+      ↓
+Backend Sends Image to Gemini AI
+      ↓
+Gemini Analyzes Screen Content
+      ↓
+AI Returns Structured Insights
+      ↓
+Frontend Displays Results to User
