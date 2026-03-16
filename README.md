@@ -20,13 +20,32 @@ Built for the **Gemini Live Agent Challenge**.
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ Architecture
 
-<h3 align="center">Architecture</h3>
+```
+## 🏗 System Architecture
 
-<p align="center">
-  <img src="assets/architecture.png" width="700">
-</p>
+```mermaid
+flowchart TD
+
+A[User Voice Command] --> B[Frontend UI<br>HTML + JavaScript]
+
+B --> C[Speech Recognition<br>Web Speech API]
+
+C --> D[Screen Capture<br>screenshot-desktop]
+
+D --> E[Node.js Backend<br>Express Server]
+
+E --> F[Google Gemini API<br>Vision Model]
+
+F --> G[AI Analysis Engine]
+
+G --> H[Structured JSON Response]
+
+H --> I[Frontend Renderer]
+
+I --> J[Results Displayed to User<br>• What AI Sees<br>• Risks<br>• Suggestions]
+
 
 
 Voice Command
