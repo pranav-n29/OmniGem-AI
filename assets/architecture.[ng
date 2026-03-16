@@ -73,21 +73,3 @@
 
 
 
-
-End-to-End Workflow-
-
-Voice Command
-      ↓
-Frontend Detects Command
-      ↓
-Screen Screenshot Captured
-      ↓
-Image Sent to Backend API
-      ↓
-Backend Sends Image to Gemini AI
-      ↓
-Gemini Analyzes Screen Content
-      ↓
-AI Returns Structured Insights
-      ↓
-Frontend Displays Results to User
