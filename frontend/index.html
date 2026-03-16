@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OmniGem-AI</title>
+
+<style>
+body{
+background:#0d1117;
+color:#c9d1d9;
+font-family:Segoe UI;
+display:flex;
+justify-content:center;
+padding:40px;
+}
+
+.container{
+width:900px;
+background:#161b22;
+padding:25px;
+border-radius:10px;
+border:1px solid #30363d;
+}
+
+input{
+width:100%;
+padding:10px;
+margin-bottom:10px;
+background:#0d1117;
+color:white;
+border:1px solid #30363d;
+border-radius:6px;
+}
+
+button{
+padding:10px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+background:#238636;
+color:white;
+font-weight:bold;
+}
+
+button:hover{
+background:#2ea043;
+}
+
+.mode-buttons{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:10px;
+margin-bottom:10px;
+}
+
+#preview{
+width:100%;
+margin-top:15px;
+border-radius:8px;
+display:none;
+}
+
+.card{
+margin-top:20px;
+padding:15px;
+background:#0d1117;
+border-radius:10px;
+border:1px solid #30363d;
+}
+
+.section{
+margin-bottom:10px;
+}
+
+.section h4{
+margin:0 0 5px 0;
+color:#58a6ff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>🧠 OmniGem AI</h2>
+
+<input id="question" placeholder="Ask about your screen...">
+
+<div class="mode-buttons">
+<button onclick="runMode('explain')">Explain Screen</button>
+<button onclick="runMode('code')">Fix Code</button>
+<button onclick="runMode('summary')">Summarize Page</button>
+<button onclick="runMode('ui')">Analyze UI</button>
+</div>
+
+<div style="display:flex; gap:10px;">
+<button onclick="captureAndAnalyze()">🧠 Analyze Screen (Ctrl + Space)</button>
+<button onclick="startVoice()">🎤 Voice Command</button>
+</div>
+<img id="preview">
+
+<div id="result"></div>
+
+</div>
+
+<script>
+let isProcessing = false
+const preview = document.getElementById("preview")
+const result = document.getElementById("result")
+const questionInput = document.getElementById("question")
+
+let modePrompt=""
+let recognition;
+
+function startVoice(){
+
+if(!('webkitSpeechRecognition' in window)){
+alert("Voice recognition not supported")
+return
+}
+
+recognition = new webkitSpeechRecognition()
+
+recognition.lang = "en-US"
+recognition.continuous = false
+recognition.interimResults = false
+
+result.innerHTML = "🎤 Listening... Say 'OmniGem' then command"
+
+recognition.start()
+
+recognition.onresult = async function(event){
+
+let speech = event.results[event.results.length-1][0].transcript.toLowerCase()
+
+console.log("Voice:",speech)
+
+
+recognition.stop()
+
+let command = speech.trim();
+
+questionInput.value = command
+
+result.innerHTML = "🧠 Command detected: "+command+"<br>📸 Capturing screen..."
+
+await captureAndAnalyze()
+
+}
+
+recognition.onerror = function(e){
+result.innerHTML = "Voice error: "+e.error
+}
+
+}
+function runMode(mode){
+
+if(mode==="explain"){
+modePrompt="Explain what is happening on this screen."
+}
+
+if(mode==="code"){
+modePrompt="Look at the code on this screen. Identify bugs and suggest fixes."
+}
+
+if(mode==="summary"){
+modePrompt="Summarize the content visible on this page."
+}
+
+if(mode==="ui"){
+modePrompt="Analyze the user interface on this screen and suggest UX improvements."
+}
+
+captureAndAnalyze()
+
+}
+
+async function captureAndAnalyze(){
+
+result.innerHTML="📸 Capturing screen..."
+
+const capture = await fetch("http://localhost:3000/capture")
+const blob = await capture.blob()
+
+preview.src = URL.createObjectURL(blob)
+preview.style.display="block"
+
+await resizeAndSend(blob)
+
+}
+
+function resizeAndSend(blob){
+
+return new Promise(resolve=>{
+
+const img = new Image()
+img.src = URL.createObjectURL(blob)
+
+img.onload = function(){
+
+const canvas = document.createElement("canvas")
+const scale = 512 / img.width
+
+canvas.width = 512
+canvas.height = img.height * scale
+
+const ctx = canvas.getContext("2d")
+ctx.drawImage(img,0,0,canvas.width,canvas.height)
+
+const base64 = canvas.toDataURL("image/png").split(",")[1]
+
+sendToGemini(base64).then(resolve)
+
+}
+
+})
+
+}
+
+async function sendToGemini(image){
+    result.innerHTML="✨ Gemini analyzing..."
+
+    const userQuestion = questionInput.value || modePrompt
+
+    try {
+        const res = await fetch("http://localhost:3000/analyze",{
+            method:"POST",
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({
+                question:userQuestion,
+                image:image
+            })
+        })
+
+        const data = await res.json()
+
+        // Handle the 429 Rate Limit Error gracefully
+        if (data.error) {
+            result.innerHTML = `<div class="card"><p style="color: #ff7b72;">⚠️ Error: ${data.error}</p></div>`;
+            return;
+        }
+
+        isProcessing = false
+        renderCard(data);
+        speakResponse(data);
+    } catch (err) {
+        result.innerHTML = `<div class="card"><p style="color: #ff7b72;">⚠️ Failed to analyze screen.</p></div>`;
+   isProcessing = false
+    }
+}
+
+function renderCard(data){
+    // Fallback if data is missing or Gemini didn't format the JSON correctly
+    if(!data || !data.what_ai_sees){
+        result.innerHTML = `<div class="card"><p>AI response unavailable or API limit reached.</p></div>`
+        return;
+    }
+
+    // 1. Process "What AI Sees" array
+    let sees = ""
+  if (Array.isArray(data.what_ai_sees)) {
+
+    data.what_ai_sees.forEach(p => {
+
+        // split long paragraphs into sentences
+        let points = p.split(/[.!?]/)
+
+        points.forEach(pt=>{
+            if(pt.trim().length > 5){
+                sees += `<li>👁 ${pt.trim()}</li>`
+            }
+        })
+
+    })
+
+}else {
+        sees = `<li>👁 ${data.what_ai_sees}</li>` // Fallback if it's just a string
+    }
+
+    // 2. Process "Risks"
+    let riskText = "No risks detected"
+    let riskIcon = "✅"
+    
+    let risksData = Array.isArray(data.risks) ? data.risks.join(", ") : data.risks;
+    if(risksData && risksData.toLowerCase() !== "none"){
+        riskText = risksData
+        riskIcon = "⚠️"
+    }
+
+    // 3. Process "Suggestions" array
+    let suggestionsHTML = ""
+    if (data.suggestions && Array.isArray(data.suggestions)) {
+        data.suggestions.forEach(s => { suggestionsHTML += `<li>💡 ${s}</li>` })
+    } else {
+        suggestionsHTML = `<li>💡 No specific suggestions provided.</li>`
+    }
+
+    // 4. Render the UI
+    result.innerHTML = `
+    <div class="card">
+        <div class="section">
+            <h4>👀 What AI Sees</h4>
+            <ul style="list-style-type: none; padding-left: 0;">${sees}</ul>
+        </div>
+
+        <div class="section">
+            <h4>${riskIcon} Possible Issues</h4>
+            <p>${riskText}</p>
+        </div>
+
+        <div class="section">
+            <h4>💡 Suggested Action</h4>
+            <ul style="list-style-type: none; padding-left: 0;">${suggestionsHTML}</ul>
+        </div>
+    </div>
+    `
+}
+
+document.addEventListener("keydown",(e)=>{
+if(e.ctrlKey && e.code==="Space"){
+captureAndAnalyze()
+}
+})
+
+function speakResponse(data) {
+    // Check if the browser supports speaking
+    if (!('speechSynthesis' in window)) return;
+    
+    // Stop any current talking before starting a new one
+    window.speechSynthesis.cancel(); 
+
+    let speechText = "Here is what I see. ";
+
+    // 1. Read only the first point of what it sees
+    if (Array.isArray(data.what_ai_sees) && data.what_ai_sees.length > 0) {
+        speechText += data.what_ai_sees[0] + ". ";
+    } else if (typeof data.what_ai_sees === 'string') {
+        speechText += data.what_ai_sees + ". ";
+    }
+
+    // 2. Read the risks
+    let riskStr = Array.isArray(data.risks) ? data.risks.join(" and ") : data.risks;
+    if (riskStr && riskStr.toLowerCase() !== 'none') {
+        speechText += "Warning, " + riskStr + ". ";
+    } else {
+        speechText += "No obvious risks detected. ";
+    }
+
+    // 3. Read only the first suggestion
+    if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
+        speechText += "I suggest that you " + data.suggestions[0];
+    }
+
+    // Create the voice and speak!
+    let voiceMessage = new SpeechSynthesisUtterance(speechText);
+    voiceMessage.rate = 1.0; // Normal speed (change to 1.2 if you want it faster)
+    window.speechSynthesis.speak(voiceMessage);
+}
+
+</script>
+
+</body>
+</html>
